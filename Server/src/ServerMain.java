@@ -21,12 +21,12 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
     public static void main(String[] args){
         startServer();
         String hostName= "localhost";
-        String serviceName="group chat";
+        String serviceName="groupChat";
 
-        if(args.length==2){
+      /*  if(args.length==2){
             hostName= args[0];
             serviceName=args[1];
-        }
+        }*/
 
         try {
             ServerIF hellooooo=new ServerMain();
@@ -49,23 +49,29 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
         }
     }
 
-    public String greet(String username){
+    public String greet(String username)throws RemoteException{
         System.out.println(username+" sldi into your DM's");
         return "Hi, have you met "+ username;
     }
 
     @Override
-    public void updateChat(String name, String nextPost, ChatClient chatClient){
+    public void updateChat(String name, String nextPost)throws RemoteException{
         String message= name+":"+nextPost+"\n";
-        sendTo(chatClient, message);
+        for(ClientIF chatClient: chatClients) {
+            sendTo(chatClient, message);
+        }
     }
 
     public void sendTo(ClientIF chatClient, String message){
-        chatClient.messageFromServer(message);
+        try {
+            chatClient.messageFromServer(message);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
-    public void passIdentity(RemoteRef ref){
+    public void passIdentity(RemoteRef ref)throws RemoteException{
         try {
             System.out.println(ref.toString());
         } catch (Exception e) {
@@ -74,7 +80,7 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
     }
 
     @Override
-    public void registerListener(String [] details){
+    public void registerListener(String [] details)throws RemoteException{
         System.out.println(new Date(System.currentTimeMillis()));
         System.out.println(details[0]+"has accepted the challenge");
         System.out.println(details[0]+"'s RMI service"+details[2]);
@@ -91,14 +97,14 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
 
             sendToAll("[Server] : " + details[0] + " has joined the group.\n");
 
-            //updateUserList();
+            updateUserList();
         }
         catch(RemoteException | MalformedURLException | NotBoundException e){
             e.printStackTrace();
         }
     }
 
-    private void updateUserList(){
+    private void updateUserList() throws RemoteException {
         String[] currentUsers= getUserList();
         for(ClientIF c: chatClients){
             try {
@@ -109,7 +115,7 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
         }
     }
 
-    private String[] getUserList(){
+    private String[] getUserList() throws RemoteException {
         // generate an array of current users
         String[] allUsers = new String[chatClients.size()];
         for(int i = 0; i< allUsers.length; i++){
@@ -129,7 +135,7 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
     }
 
     @Override
-    public void leaveChat(String username){
+    public void leaveChat(String username)throws RemoteException{
         for(ClientIF c: chatClients){
             if(c.getName().equals(username)){
                 System.out.println(username+": FRIENDSHIP OVER!!");
@@ -143,7 +149,7 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
     }
 
     @Override
-    public void sendPM(int [] privateGroup, String message){
+    public void sendPM(int [] privateGroup, String message)throws RemoteException{
         for(int i: privateGroup){
             ClientIF c= chatClients.elementAt(i);
             c.messageFromServer(message);
