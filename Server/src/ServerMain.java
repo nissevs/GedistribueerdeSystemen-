@@ -45,6 +45,7 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
     }
 
     public void sendMessageTo(String receiver, String message){
+        System.out.println("Message for "+receiver+": "+message);
         bulletinBoard.put(receiver, message);
     }
 
