@@ -13,13 +13,11 @@ import java.util.Vector;
 
 public class ServerMain extends UnicastRemoteObject implements ServerIF{
 
-    private Vector<ClientIF> chatClients;
-    Map<String, String> bulletinBoard;
+    private static MessageBox[] bulletinBoard;
 
     protected ServerMain() throws RemoteException {
         super();
-        chatClients= new Vector<>();
-        bulletinBoard = new HashMap<String, String>();
+        bulletinBoard = new MessageBox[15];
     }
 
     public static void main(String[] args) {
@@ -27,7 +25,7 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
         String hostName = "192.168.0.119";
         String serviceName = "groupChat";
 
-      /*  if(args.length==2){
+        /* if(args.length==2){
             hostName= args[0];
             serviceName=args[1];
         }*/
@@ -42,15 +40,32 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
             e.printStackTrace();
         }
 
+        for(int i=0; i<bulletinBoard.length; i++){
+            bulletinBoard[i] = new MessageBox();
+        }
+    }
+
+    @Override
+    public void sendMessageIntoBoard(int boxNr, String message, byte[] gehashteTag){
+        System.out.println("Ontvangen message voor boxnummer "+boxNr+": "+message);
+        System.out.println("Tag: "+gehashteTag);
+        this.bulletinBoard[boxNr].setTag(gehashteTag, message);
+    }
+
+    @Override
+    public String getMessageFromBoard(int boxNr, byte[] gehashteTag){
+        System.out.println("Proberen om een bericht te krijgen uit boxnummer "+boxNr);
+        System.out.println("Tag: "+gehashteTag);
+        return this.bulletinBoard[boxNr].getMessage(gehashteTag);
     }
 
     public void sendMessageTo(String receiver, String message){
         System.out.println("Message for "+receiver+": "+message);
-        bulletinBoard.put(receiver, message);
     }
 
     public String getMessageFrom(String sender){
-        return bulletinBoard.get(sender);
+        //return bulletinBoard.get(sender);
+        return null;
     }
 
     public static void startServer(){

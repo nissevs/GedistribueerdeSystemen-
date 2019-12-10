@@ -11,6 +11,8 @@ public interface ServerIF extends Remote {
      //void sendPM(int [] privateGroup, String message) throws RemoteException;
      //String getValueToClient() throws RemoteException;
      void sendMessageTo(String receiver, String message) throws RemoteException;
+     void sendMessageIntoBoard(int boxNr, String message, byte[] gehashteTag);
+     String getMessageFromBoard(int boxNr, byte[] gehashteTag);
      String getMessageFrom(String sender) throws RemoteException;
 
 }
