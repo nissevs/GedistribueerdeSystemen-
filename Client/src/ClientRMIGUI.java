@@ -267,7 +267,8 @@ public class ClientRMIGUI extends JFrame implements ActionListener {
      * @throws RemoteException
      */
     private void sendMessage(String chatMessage) throws RemoteException {
-        chatClient.serverIF.updateChat(name, chatMessage);
+        chatClient.serverIF.sendMessageTo("Robbe", chatMessage);
+        System.out.println("succeeded to send to server:" + chatMessage);
     }
 
     /**

@@ -28,6 +28,7 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
 
     }
 
+
     @Override
     public String getName() {
         return this.name;
@@ -47,34 +48,41 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
     }
 
     public void startClient()throws RemoteException{
-        String [] details= {name, "localhost", "GroupChatService"};
+        String [] details= {name, "192.168.0.130", "GroupChatService"};
         try {
-            Naming.rebind("rmi://localhost/GroupChatService", this);
-            serverIF= (ServerIF) Naming.lookup("rmi://localhost/groupChat");
+            //Naming.rebind("rmi://192.168.0.119/GroupChatService", this);
+            serverIF= (ServerIF) Naming.lookup("rmi://192.168.0.119/groupChat");
+            String iets=serverIF.getValueToClient();
+            System.out.println(iets);
             System.out.println("Challenge accepted");
         } catch (RemoteException e) {
+            System.out.println("remote");
             e.printStackTrace();
         } catch (MalformedURLException e) {
+            System.out.println("url");
             connectionProblem = true;
             e.printStackTrace();
         } catch (NotBoundException e) {
+            System.out.println("not bound");
             e.printStackTrace();
         }
-        if(!connectionProblem){
+        /*if(!connectionProblem){
             registerWithServer(details);
-        }
+        }*/
         System.out.println("Client Listen RMI Server is running...\n");
 
     }
 
-    public void registerWithServer(String[] details){
+
+
+   /* public void registerWithServer(String[] details){
         try {
             serverIF.passIdentity(this.ref);
             serverIF.registerListener(details);
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
 
 }
