@@ -62,35 +62,35 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
         }
     }
 
-    public String greet(String username)throws RemoteException{
+   /* public String greet(String username)throws RemoteException{
         System.out.println(username+" sldi into your DM's");
         return "Hi, have you met "+ username;
-    }
+    }*/
 
-    @Override
+   /* @Override
     public void updateChat(String name, String nextPost)throws RemoteException{
         String message= name+":"+nextPost+"\n";
         for(ClientIF chatClient: chatClients) {
             sendTo(chatClient, message);
         }
-    }
+    }*/
 
-    public void sendTo(ClientIF chatClient, String message){
+   /* public void sendTo(ClientIF chatClient, String message){
         try {
             chatClient.messageFromServer(message);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
-    @Override
+    /*@Override
     public void passIdentity(RemoteRef ref)throws RemoteException{
         try {
             System.out.println(ref.toString());
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
     @Override
     public void registerListener(String [] details)throws RemoteException{
@@ -100,12 +100,12 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
         //registerChat(details);
     }
 
-    public String getValueToClient() throws RemoteException{
+   /* public String getValueToClient() throws RemoteException{
         System.out.println("De client probeert de waarde te getten");
         return "Het is gelukt!";
-    }
+    }*/
 
-    private void registerChat(String[] details){
+    /*private void registerChat(String[] details){
         try{
             ClientIF nextClient = ( ClientIF )Naming.lookup("rmi://" + details[1] + "/" + details[2]);
 
@@ -120,9 +120,9 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
         catch(RemoteException | MalformedURLException | NotBoundException e){
             e.printStackTrace();
         }
-    }
+    }*/
 
-    private void updateUserList() throws RemoteException {
+   /* private void updateUserList() throws RemoteException {
         String[] currentUsers= getUserList();
         for(ClientIF c: chatClients){
             try {
@@ -131,18 +131,18 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
                 e.printStackTrace();
             }
         }
-    }
+    }*/
 
-    private String[] getUserList() throws RemoteException {
+   /* private String[] getUserList() throws RemoteException {
         // generate an array of current users
         String[] allUsers = new String[chatClients.size()];
         for(int i = 0; i< allUsers.length; i++){
             allUsers[i] = chatClients.elementAt(i).getName();
         }
         return allUsers;
-    }
+    }*/
 
-    public void sendToAll(String message){
+   /* public void sendToAll(String message){
         for(ClientIF c: chatClients){
             try {
                 c.messageFromServer(message);
@@ -150,29 +150,29 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
                 e.printStackTrace();
             }
         }
-    }
+    }*/
 
     @Override
     public void leaveChat(String username)throws RemoteException{
-        for(ClientIF c: chatClients){
-            if(c.getName().equals(username)){
+        //for(ClientIF c: chatClients){
+          //  if(c.getName().equals(username)){
                 System.out.println(username+": FRIENDSHIP OVER!!");
-                chatClients.remove(c);
-                break;
+            //    chatClients.remove(c);
+              //  break;
             }
-        }
-        if(!chatClients.isEmpty()){
+      //  }
+        /*if(!chatClients.isEmpty()){
             updateUserList();
-        }
-    }
+        }*/
+ //   }
 
-    @Override
+   /* @Override
     public void sendPM(int [] privateGroup, String message)throws RemoteException{
         for(int i: privateGroup){
             ClientIF c= chatClients.elementAt(i);
             c.messageFromServer(message);
         }
-    }
+    }*/
 
 
 }
