@@ -19,7 +19,7 @@ public class ClientRMIGUI extends JFrame implements ActionListener {
 
     protected JTextArea textArea, userArea;
     protected JFrame frame;
-    protected JButton privateMsgButton, startButton, sendButton;
+    protected JButton privateMsgButton, startButton, sendButton,getButton;
     protected JPanel clientPanel, userPanel;
 
     /**
@@ -198,11 +198,16 @@ public class ClientRMIGUI extends JFrame implements ActionListener {
         startButton = new JButton("Start ");
         startButton.addActionListener(this);
 
+        getButton= new JButton("get messages");
+        getButton.addActionListener(this);
+        getButton.setEnabled(true);
+
         JPanel buttonPanel = new JPanel(new GridLayout(4, 1));
         buttonPanel.add(privateMsgButton);
         buttonPanel.add(new JLabel(""));
         buttonPanel.add(startButton);
         buttonPanel.add(sendButton);
+        buttonPanel.add(getButton);
 
         return buttonPanel;
     }
@@ -250,6 +255,11 @@ public class ClientRMIGUI extends JFrame implements ActionListener {
                 message = textField.getText();
                 textField.setText("");
                 sendPrivate(privateList);
+            }
+
+            if(e.getSource()== getButton){
+                String mes=chatClient.serverIF.getMessageFrom(name);
+                textArea.append("New message for me: "+mes);
             }
 
         }
