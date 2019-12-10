@@ -8,6 +8,10 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
 
     ClientRMIGUI chatGUI;
     private String name;
+    //private Keys keys;
+    byte[] testData= new byte[5];
+
+
 
     //public ClientIF user;
     protected ServerIF serverIF;
@@ -39,7 +43,31 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
         this.name=name;
         //this.user=chatClient;
         this.chatGUI=chatGUI;
+    }
 
+    public void getMessages(){
+        byte[] testData= new byte[5];
+        testData[0]=123;
+        testData[1]= 123;
+        testData[2]=123;
+        testData[3]= 123;
+        testData[4]=123;
+
+        String newMessage=serverIF.getMessageFromBoard(1,testData);
+        //System.out.println(newMessage + newMessage.length());
+        if(newMessage!=null) {
+            if(newMessage.length()!=0) chatGUI.textArea.append("Nieuw bericht: " + newMessage+ "\n");
+        }
+    }
+
+    public void sendMessage(String message){
+        byte[] testData= new byte[5];
+        testData[0]=123;
+        testData[1]= 123;
+        testData[2]=123;
+        testData[3]= 123;
+        testData[4]=123;
+        serverIF.sendMessageIntoBoard(1,message,testData);
     }
 
    /* @Override

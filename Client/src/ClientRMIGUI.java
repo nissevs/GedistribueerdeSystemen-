@@ -1,11 +1,17 @@
+import org.w3c.dom.events.Event;
+
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.Serializable;
 import java.rmi.RemoteException;
+import java.util.Timer;
 
-public class ClientRMIGUI extends JFrame implements ActionListener {
+public class ClientRMIGUI extends JFrame implements ActionListener, Serializable {
 
     private static final long serialVersionUID = 1L;
     private JPanel textPanel, inputPanel;
@@ -16,6 +22,7 @@ public class ClientRMIGUI extends JFrame implements ActionListener {
     private ChatClient chatClient;
     private JList<String> list;
     private DefaultListModel<String> listModel;
+    private TimerThread timerThread;
 
     protected JTextArea textArea, userArea;
     protected JFrame frame;
@@ -92,8 +99,23 @@ public class ClientRMIGUI extends JFrame implements ActionListener {
         frame.setLocation(150, 150);
         textField.requestFocus();
 
-        frame.setDefaultCloseOperation(EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e){
+                closeAll();
+            }
+        });
+
         frame.setVisible(true);
+    }
+
+    /**
+     * action to close window and close the timerthread
+     */
+    public void closeAll(){
+        timerThread.stopGettingMessages();
+        System.exit(0);
     }
 
 
@@ -173,7 +195,7 @@ public class ClientRMIGUI extends JFrame implements ActionListener {
 
         //Create the list and put it in a scroll pane.
         list = new JList<String>(listModel);
-        list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.setVisibleRowCount(8);
         list.setFont(meiryoFont);
         JScrollPane listScrollPane = new JScrollPane(list);
@@ -198,16 +220,16 @@ public class ClientRMIGUI extends JFrame implements ActionListener {
         startButton = new JButton("Start ");
         startButton.addActionListener(this);
 
-        getButton= new JButton("get messages");
+        /*getButton= new JButton("get messages");
         getButton.addActionListener(this);
-        getButton.setEnabled(true);
+        getButton.setEnabled(true);*/
 
         JPanel buttonPanel = new JPanel(new GridLayout(4, 1));
         buttonPanel.add(privateMsgButton);
         buttonPanel.add(new JLabel(""));
         buttonPanel.add(startButton);
         buttonPanel.add(sendButton);
-        buttonPanel.add(getButton);
+        //buttonPanel.add(getButton);
 
         return buttonPanel;
     }
@@ -231,6 +253,8 @@ public class ClientRMIGUI extends JFrame implements ActionListener {
                         startButton.setEnabled(false);
                         sendButton.setEnabled(true);
                     }
+                    timerThread= new TimerThread(chatClient);
+                    timerThread.start();
                 }
                 else{
                     JOptionPane.showMessageDialog(frame, "Enter your name to Start");
@@ -254,13 +278,13 @@ public class ClientRMIGUI extends JFrame implements ActionListener {
                 }
                 message = textField.getText();
                 textField.setText("");
-                sendPrivate(privateList);
+                //sendPrivate(privateList);
             }
 
-            if(e.getSource()== getButton){
+            /*if(e.getSource()== getButton){
                 String mes=chatClient.serverIF.getMessageFrom(name);
                 textArea.append("New message for me: "+mes);
-            }
+            }*/
 
         }
         catch (RemoteException remoteExc) {
@@ -277,7 +301,8 @@ public class ClientRMIGUI extends JFrame implements ActionListener {
      * @throws RemoteException
      */
     private void sendMessage(String chatMessage) throws RemoteException {
-        chatClient.serverIF.sendMessageTo("Robbe", chatMessage);
+        //chatClient.serverIF.sendMessageTo("Robbe", chatMessage);
+        chatClient.sendMessage(chatMessage);
         System.out.println("succeeded to send to server:" + chatMessage);
     }
 
@@ -286,10 +311,10 @@ public class ClientRMIGUI extends JFrame implements ActionListener {
 
      * @throws RemoteException
      */
-    private void sendPrivate(int[] privateList) throws RemoteException {
+   /* private void sendPrivate(int[] privateList) throws RemoteException {
         String privateMessage = "[PM from " + name + "] :" + message + "\n";
         chatClient.serverIF.sendPM(privateList, privateMessage);
-    }
+    }*/
 
     /**
      * Make the connection to the chat server
