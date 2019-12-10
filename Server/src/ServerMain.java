@@ -7,21 +7,25 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.server.RemoteRef;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
 
 public class ServerMain extends UnicastRemoteObject implements ServerIF{
 
     private Vector<ClientIF> chatClients;
+    Map<String, String> bulletinBoard;
 
     protected ServerMain() throws RemoteException {
         super();
         chatClients= new Vector<>();
+        bulletinBoard = new HashMap<String, String>();
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         startServer();
-        String hostName= "localhost";
-        String serviceName="groupChat";
+        String hostName = "192.168.0.119";
+        String serviceName = "groupChat";
 
       /*  if(args.length==2){
             hostName= args[0];
@@ -29,8 +33,8 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
         }*/
 
         try {
-            ServerIF hellooooo=new ServerMain();
-            Naming.rebind("rmi://"+hostName+"/"+serviceName, hellooooo);
+            ServerIF hellooooo = new ServerMain();
+            Naming.rebind("rmi://" + hostName + "/" + serviceName, hellooooo);
             System.out.println("Daddy's home");
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -38,6 +42,14 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
             e.printStackTrace();
         }
 
+    }
+
+    public void sendMessageTo(String receiver, String message){
+        bulletinBoard.put(receiver, message);
+    }
+
+    public String getMessageFrom(String sender){
+        return bulletinBoard.get(sender);
     }
 
     public static void startServer(){
@@ -82,9 +94,14 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
     @Override
     public void registerListener(String [] details)throws RemoteException{
         System.out.println(new Date(System.currentTimeMillis()));
-        System.out.println(details[0]+"has accepted the challenge");
+        System.out.println(details[0]+" has accepted the challenge");
         System.out.println(details[0]+"'s RMI service"+details[2]);
-        registerChat(details);
+        //registerChat(details);
+    }
+
+    public String getValueToClient() throws RemoteException{
+        System.out.println("De client probeert de waarde te getten");
+        return "Het is gelukt!";
     }
 
     private void registerChat(String[] details){
