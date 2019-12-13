@@ -6,6 +6,8 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.RemoteRef;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,9 +22,13 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
         bulletinBoard = new MessageBox[15];
     }
 
+    public int getGrootteVanBoard(){
+        return this.bulletinBoard.length;
+    }
+
     public static void main(String[] args) {
         startServer();
-        String hostName = "192.168.0.119";
+        String hostName = "localhost";
         String serviceName = "groupChat";
 
         /* if(args.length==2){
@@ -40,32 +46,35 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
             e.printStackTrace();
         }
 
-        for(int i=0; i<bulletinBoard.length; i++){
+        for (int i = 0; i < bulletinBoard.length; i++) {
             bulletinBoard[i] = new MessageBox();
         }
     }
 
     @Override
-    public void sendMessageIntoBoard(int boxNr, String message, byte[] gehashteTag){
-        System.out.println("Ontvangen message voor boxnummer "+boxNr+": "+message);
-        System.out.println("Tag: "+gehashteTag);
+    public void sendMessageIntoBoard(int boxNr, byte[] message, byte[] gehashteTag) throws RemoteException{
+        System.out.println();
+        System.out.println("Ontvangen message voor boxnummer "+boxNr+": "+new String(message));
+        System.out.println("Tag: "+new String(gehashteTag));
+        System.out.println();
         this.bulletinBoard[boxNr].setTag(gehashteTag, message);
     }
 
     @Override
-    public String getMessageFromBoard(int boxNr, byte[] gehashteTag){
+    public byte[] getMessageFromBoard(int boxNr, byte[] tag) throws RemoteException, NoSuchAlgorithmException {
+        MessageDigest sha = MessageDigest.getInstance("SHA-256");
+        byte[] hashedTag = sha.digest(tag);
+
+        byte[] message = this.bulletinBoard[boxNr].getMessage(hashedTag);
+
+        System.out.println();
         System.out.println("Proberen om een bericht te krijgen uit boxnummer "+boxNr);
-        System.out.println("Tag: "+gehashteTag);
-        return this.bulletinBoard[boxNr].getMessage(gehashteTag);
-    }
+        System.out.println("Tag: "+new String(tag));
+        System.out.println();
 
-    public void sendMessageTo(String receiver, String message){
-        System.out.println("Message for "+receiver+": "+message);
-    }
+        //HIER MOET JE EERST DE TAG NOG HASHEN
 
-    public String getMessageFrom(String sender){
-        //return bulletinBoard.get(sender);
-        return null;
+        return message;
     }
 
     public static void startServer(){

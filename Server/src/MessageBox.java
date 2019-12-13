@@ -4,19 +4,24 @@ import java.util.Map;
 public class MessageBox {
 
     //De key in deze map is de gehashte tag
-    private Map<byte[], String> messages;
+    private Map<String, byte[]> messages;
 
     public MessageBox(){
-        this.messages = new HashMap<byte[], String>();
+        this.messages = new HashMap<String, byte[]>();
     }
 
-    public String getMessage(byte[] tag){
-        return this.messages.get(tag);
+    public byte[] getMessage(byte[] tag){
+        byte[] message = this.messages.get(new String(tag));
+        if(this.messages.containsKey(tag)){
+            System.out.println("DELETED MESSAGE - "+new String(tag)+": "+new String(message));
+        }
+        this.messages.remove(new String(tag));
+        return message;
     }
 
-    public void setTag(byte[] tag, String message){
-        System.out.println("ADDED MESSAGE - "+tag+": "+message);
-        this.messages.put(tag, message);
+    public void setTag(byte[] tag, byte[] message){
+        System.out.println("ADDED MESSAGE - "+new String(tag)+": "+new String(message));
+        this.messages.put(new String(tag), message);
     }
 
 }

@@ -1,6 +1,7 @@
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.server.RemoteRef;
+import java.security.NoSuchAlgorithmException;
 
 public interface ServerIF extends Remote {
 
@@ -8,11 +9,8 @@ public interface ServerIF extends Remote {
      void passIdentity(RemoteRef ref) throws RemoteException;*/
      void registerListener(String [] details) throws RemoteException;
      void leaveChat(String username) throws RemoteException;
-     //void sendPM(int [] privateGroup, String message) throws RemoteException;
-     //String getValueToClient() throws RemoteException;
-     void sendMessageTo(String receiver, String message) throws RemoteException;
-     void sendMessageIntoBoard(int boxNr, String message, byte[] gehashteTag);
-     String getMessageFromBoard(int boxNr, byte[] gehashteTag);
-     String getMessageFrom(String sender) throws RemoteException;
+     void sendMessageIntoBoard(int boxNr, byte[] message, byte[] gehashteTag) throws RemoteException;
+     int getGrootteVanBoard() throws RemoteException;
+     byte[] getMessageFromBoard(int boxNr, byte[] tag) throws RemoteException, NoSuchAlgorithmException;
 
 }
