@@ -5,21 +5,17 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.ListSelectionEvent;
 import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.Serializable;
+import java.util.*;
 import java.rmi.RemoteException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
+import java.util.List;
 
 public class ClientRMIGUI extends JFrame implements ActionListener, Serializable {
 
@@ -34,6 +30,11 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
     private DefaultListModel<String> listModel;
     private TimerThread timerThread;
 
+    //Added for menu bar
+    private JMenuBar menuBar;
+    private JMenu menu, menuLogin;
+    private JMenuItem menuItemSave, menuItemOpen, menuItemSaveToServer, menuItemLoginFromServer;
+
     protected JTextArea textArea, userArea;
     protected JFrame frame;
     protected JButton privateMsgButton, startButton, sendButton, addFriendButton, pasteButton, acceptFriendButton, addGroupButton;
@@ -45,6 +46,8 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
     private boolean acceptUniekeCode = false;
     private boolean acceptWachtwoord = false;
     private boolean addedFriend = false;
+    private boolean passwordSave = false;
+    private boolean passwordLogin = false;
     private String friendName = null;
     private byte[] tagAsSender = null;
     private byte[] tagAsReceiver = null;
@@ -119,6 +122,9 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
         c.add(outerPanel, BorderLayout.CENTER);
         c.add(getUsersPanel(), BorderLayout.WEST);
 
+        setJMenuBar();
+        frame.setJMenuBar(menuBar);
+
         frame.add(c);
         frame.pack();
         frame.setAlwaysOnTop(true);
@@ -152,6 +158,47 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
         return this.listModel.elementAt(index);
     }
 
+
+
+    public void setJMenuBar(){
+
+        menuBar = new JMenuBar();
+
+        menu = new JMenu("File");
+        menu.setMnemonic(KeyEvent.VK_A);
+        menu.getAccessibleContext().setAccessibleDescription("Menu to save or open status local");
+        menuLogin = new JMenu("Login");
+        menuLogin.setMnemonic(KeyEvent.VK_A);
+        menuLogin.getAccessibleContext().setAccessibleDescription("Menu to save or open status from server");
+        menuBar.add(menu);
+        menuBar.add(menuLogin);
+
+        menuItemSave = new JMenuItem("Save", KeyEvent.VK_T);
+        menuItemSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, ActionEvent.ALT_MASK));
+        menuItemSave.getAccessibleContext().setAccessibleDescription("Saves all chats in encrypted file");
+        menuItemSave.addActionListener(this);
+        menu.add(menuItemSave);
+
+        menuItemOpen = new JMenuItem("Open", KeyEvent.VK_T);
+        menuItemOpen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, ActionEvent.ALT_MASK));
+        menuItemOpen.getAccessibleContext().setAccessibleDescription("Opens all chats in encrypted file");
+        menuItemOpen.addActionListener(this);
+        menu.add(menuItemOpen);
+        menu.setEnabled(false);
+
+        menuItemSaveToServer = new JMenuItem("Save to server", KeyEvent.VK_T);
+        menuItemSaveToServer.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.ALT_MASK));
+        menuItemSaveToServer.getAccessibleContext().setAccessibleDescription("Saves all chats on server");
+        menuItemSaveToServer.addActionListener(this);
+        menuLogin.add(menuItemSaveToServer);
+
+        menuItemLoginFromServer = new JMenuItem("Login from server", KeyEvent.VK_T);
+        menuItemLoginFromServer.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.ALT_MASK));
+        menuItemLoginFromServer.getAccessibleContext().setAccessibleDescription("Logs the user in from the server");
+        menuItemLoginFromServer.addActionListener(this);
+        menuLogin.add(menuItemLoginFromServer);
+        menuLogin.setEnabled(false);
+    }
 
     /**
      * Method to set up the JPanel to display the chat text
@@ -335,6 +382,8 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
                         pasteButton.setEnabled(true);
                         acceptFriendButton.setEnabled(true);
                         addGroupButton.setEnabled(true);
+                        menu.setEnabled(true);
+                        menuLogin.setEnabled(true);
                         frame.getRootPane().setDefaultButton(sendButton);
                     }
                     timerThread= new TimerThread(chatClient);
@@ -347,7 +396,85 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
 
             //get text and clear textField
             if(e.getSource() == sendButton){
-                if(this.addedFriend && textField.getText().length()!=0){
+                if(passwordLogin && textField.getText().length()!=0){
+                    String pass = textField.getText();
+                    textField.setText("");
+
+                    int boxNr = (pass.length()*27 + this.name.length()*6) % chatClient.serverIF.getGrootteVanBoard();
+                    MessageDigest sha = MessageDigest.getInstance("SHA-256");
+                    String ongehashteTag = pass+"_"+boxNr+"_"+this.name;
+                    byte[] tag = sha.digest(ongehashteTag.getBytes());
+
+                    byte[] salt= new byte[16];
+                    for(int i=0; i<16; i++){
+                        salt[i] = tag[i+2];
+                    }
+
+                    SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+                    KeySpec spec = new PBEKeySpec(pass.toCharArray(), salt,65536, 256);
+                    SecretKey tmp = factory.generateSecret(spec);
+                    SecretKey key = new SecretKeySpec(tmp.getEncoded(), "AES");
+
+                    System.out.println("Used boxnumber: "+boxNr);
+                    System.out.println("Used tag: "+new String(tag));
+                    System.out.println("Used key: "+Base64.getEncoder().encodeToString(key.getEncoded()));
+                    byte[] encryptedFile = this.chatClient.serverIF.getMessageFromBoard(boxNr, tag);
+
+                    Cipher c = Cipher.getInstance("AES");
+                    c.init(Cipher.DECRYPT_MODE, key);
+
+                    byte[] encodedFile = c.doFinal(encryptedFile);
+
+                    File file2 = new File("temp.txt");
+                    OutputStream os = new FileOutputStream(file2);
+                    os.write(encodedFile);
+                    os.close();
+
+                    this.chatClient.importFile(file2);
+
+                    Files.delete(file2.toPath());
+
+                    this.textArea.setText("[System]: I succesfully add all your chats to the this client!");
+                    this.passwordLogin = false;
+                }else if(passwordSave && textField.getText().length()!=0){
+                    String pass = textField.getText();
+                    textField.setText("");
+
+                    int boxNr = (pass.length()*27 + this.name.length()*6) % chatClient.serverIF.getGrootteVanBoard();
+                    MessageDigest sha = MessageDigest.getInstance("SHA-256");
+                    String ongehashteTag = pass+"_"+boxNr+"_"+this.name;
+                    byte[] tag = sha.digest(ongehashteTag.getBytes());
+
+                    byte[] salt= new byte[16];
+                    for(int i=0; i<16; i++){
+                        salt[i] = tag[i+2];
+                    }
+
+                    SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+                    KeySpec spec = new PBEKeySpec(pass.toCharArray(), salt,65536, 256);
+                    SecretKey tmp = factory.generateSecret(spec);
+                    SecretKey key = new SecretKeySpec(tmp.getEncoded(), "AES");
+
+                    File file = new File("temp2.txt");
+                    this.chatClient.exportFile(file);
+                    FileInputStream fis = new FileInputStream(file);
+                    byte[] encodedFile = new byte[(int) file.length()];
+                    fis.read(encodedFile);
+
+                    Cipher c = Cipher.getInstance("AES");
+                    c.init(Cipher.ENCRYPT_MODE, key);
+
+                    byte[] encryptedFile = c.doFinal(encodedFile);
+                    System.out.println("Used boxnumber: "+boxNr);
+                    System.out.println("Used tag: "+new String(tag));
+                    System.out.println("Used key: "+Base64.getEncoder().encodeToString(key.getEncoded()));
+                    chatClient.serverIF.sendMessageIntoBoard(boxNr, encryptedFile, sha.digest(tag));
+
+                    Files.delete(file.toPath());
+
+                    this.textArea.setText("[System]: I succesfully saved your chats to the server!");
+                    this.passwordSave = false;
+                }else if(this.addedFriend && textField.getText().length()!=0){
                     this.friendName = textField.getText();
                     textField.setText("");
 
@@ -489,7 +616,13 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
                     textField.setText("");
                     System.out.print("Sending a message to "+listModel.getElementAt(index));
                     System.out.println("  -  Sended message: " + message);
-                    sendMessage(listModel.getElementAt(index), message);
+                    if(!chatClient.isGroup(listModel.getElementAt(index))){
+                        sendMessage(listModel.getElementAt(index), message);
+                    }else{
+                        System.out.println("Trying to send something into a group!");
+                        List<String> users = chatClient.getUsersFromGroup(listModel.getElementAt(index));
+                        sendMessageToGroup(listModel.getElementAt(index), users, message);
+                    }
                 }
             }
 
@@ -546,14 +679,7 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
                     chatClient.addGroup(groupname, this.groupMembers);
 
                     //Initializing the GUI to the chat of the added group
-                    listModel.addElement(groupname);
-                    int index = listModel.indexOf(groupname);
-                    list.setSelectedIndex(index);
-                    listModel.removeElement("No other users");
-                    textArea.setText("");
-                    textArea.append("[System]: Haaaaave you met "+groupname+"?\n");
-                    textArea.append("\n");
-                    textField.setText("");
+                    initializeGUIForGroup(groupname, chatClient.getUsersFromGroup(groupname));
 
 
                     this.addedGroupMembers = false;
@@ -576,14 +702,117 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
                 textField.paste();
             }
 
+            if(e.getSource() == menuItemSave){
+                System.out.println("Client pushed the save button");
+
+                JFileChooser fileChooser = new JFileChooser();
+                int retval = fileChooser.showSaveDialog(menuItemSave);
+                if (retval == JFileChooser.APPROVE_OPTION) {
+                    File file = fileChooser.getSelectedFile();
+                    if (file == null) {
+                        return;
+                    }
+                    if (!file.getName().toLowerCase().endsWith(".txt")) {
+                        file = new File(file.getParentFile(), file.getName() + ".txt");
+                    }
+                    try {
+
+                       chatClient.exportFile(file);
+
+                    } catch (Exception er) {
+                        er.printStackTrace();
+                    }
+                }
+            }
+
+            if(e.getSource() == menuItemOpen) {
+                System.out.println("Client pushed the open button");
+
+                JFileChooser fc = new JFileChooser();
+                int returnVal = fc.showOpenDialog(menuItemOpen);
+
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    File file = fc.getSelectedFile();
+
+                    FileInputStream fis = new FileInputStream(file);
+                    byte[] encodedFile = new byte[(int) file.length()];
+                    fis.read(encodedFile);
+
+                    System.out.println(new String(encodedFile));
+
+                    chatClient.importFile(file);
+                }
+
+            }
+
+            if(e.getSource() == menuItemSaveToServer){
+                //TODO
+                list.clearSelection();
+                textArea.setText("");
+                textArea.append("[System]: You are about to save all these chats (on a safe way) to the server. Please enter a safe password and press SEND.\n");
+                this.passwordSave = true;
+            }
+
+            if(e.getSource() == menuItemLoginFromServer){
+                //TODO
+                list.clearSelection();
+                textArea.setText("");
+                textArea.append("[System]: You are about to log into the server. Please enter your safe password and press SEND.\n");
+                this.passwordLogin = true;
+            }
+
         }
-        catch (RemoteException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException | InvalidKeySpecException remoteExc) {
+        catch (RemoteException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException | IllegalBlockSizeException | InvalidKeySpecException | FileNotFoundException remoteExc) {
             remoteExc.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } catch (NoSuchPaddingException ex) {
+            ex.printStackTrace();
         }
 
     }//end actionPerformed
 
     // --------------------------------------------------------------------
+
+    public void addUserToList(String user){
+        listModel.removeElement("No other users");
+        listModel.addElement(user);
+    }
+
+    public void initializeGUIForGroup(String groupname, List<String> users){
+        //Initializing the GUI to the chat of the added friend
+        listModel.addElement(groupname);
+        int index = listModel.indexOf(groupname);
+        list.setSelectedIndex(index);
+        listModel.removeElement("No other users");
+        textArea.setText("");
+        textArea.append("[System]: Legen... wait for it!\n");
+        textArea.append("[System]: Awesome because you are in a chatgroup with ");
+
+        String enumerationOfUsers = "";
+
+        for(int i=0; i<users.size(); i++){
+            if(!users.get(i).equals(this.name)){
+                enumerationOfUsers += users.get(i);
+                if(users.indexOf(name) == users.size()-1){
+                    if(i!=users.size()-2) enumerationOfUsers += ", ";
+                } else if(i != users.size()-1){
+                    enumerationOfUsers += ", ";
+                }
+            }
+        }
+
+        String hulp = enumerationOfUsers;
+        if(users.size()>2){
+            int indexOfLastComma = enumerationOfUsers.lastIndexOf(",");
+            hulp = enumerationOfUsers.substring(0,indexOfLastComma) + " and" + enumerationOfUsers.substring(indexOfLastComma+1);
+        }
+
+        textArea.append(hulp+"\n");
+        textArea.append("[System]: ... dary!\n");
+        textArea.append("\n");
+        textField.setText("");
+    }
 
     /**
      * Send a message, to be relayed to all chatters
@@ -592,6 +821,23 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
      */
     private void sendMessage(String friendname, String chatMessage) throws RemoteException, BadPaddingException, InvalidKeyException, IllegalBlockSizeException, NoSuchAlgorithmException, InvalidKeySpecException {
         chatClient.sendMessageTo(friendname, chatMessage);
+    }
+
+    private void sendMessageToGroup(String groupname, List<String> users, String chatMessage) throws RemoteException, IllegalBlockSizeException, InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, BadPaddingException {
+        long millis = -1;
+
+        for(String user: users){
+            millis = chatClient.sendMessageWithoutPrinting(user+"_"+groupname, chatMessage);
+        }
+
+        String uur =  String.format("%02d", new Date(millis).getHours());
+        String minuten = String.format("%02d", new Date(millis).getMinutes());
+
+        textArea.append(uur+":"+minuten+" - "+"[You]: "+message+"\n");
+        textArea.setCaretPosition(textArea.getDocument().getLength());
+
+        chatClient.addMessageToHistory(groupname, uur+":"+minuten+" - "+"[You]: "+message+"\n");
+
     }
 
     /**

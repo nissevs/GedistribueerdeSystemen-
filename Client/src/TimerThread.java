@@ -5,6 +5,7 @@ import java.rmi.RemoteException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -29,6 +30,7 @@ public class TimerThread extends Thread {
                 }
 
                 if(index != -1) chatClient.getMessagesFrom(chatClient.chatGUI.getUserAtIndex(index));
+
             } catch (RemoteException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | InvalidKeySpecException e) {
                 e.printStackTrace();
             }
