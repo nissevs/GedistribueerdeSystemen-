@@ -58,7 +58,6 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
     private boolean inGroupModus = false;
     private List<String> groupMembers = null;
 
-
     /**
      * Main method to start client GUI app.
      * @param args
@@ -415,9 +414,6 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
                     SecretKey tmp = factory.generateSecret(spec);
                     SecretKey key = new SecretKeySpec(tmp.getEncoded(), "AES");
 
-                    System.out.println("Used boxnumber: "+boxNr);
-                    System.out.println("Used tag: "+new String(tag));
-                    System.out.println("Used key: "+Base64.getEncoder().encodeToString(key.getEncoded()));
                     byte[] encryptedFile = this.chatClient.serverIF.getMessageFromBoard(boxNr, tag);
 
                     Cipher c = Cipher.getInstance("AES");
@@ -465,9 +461,6 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
                     c.init(Cipher.ENCRYPT_MODE, key);
 
                     byte[] encryptedFile = c.doFinal(encodedFile);
-                    System.out.println("Used boxnumber: "+boxNr);
-                    System.out.println("Used tag: "+new String(tag));
-                    System.out.println("Used key: "+Base64.getEncoder().encodeToString(key.getEncoded()));
                     chatClient.serverIF.sendMessageIntoBoard(boxNr, encryptedFile, sha.digest(tag));
 
                     Files.delete(file.toPath());
@@ -703,7 +696,21 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
             }
 
             if(e.getSource() == menuItemSave){
-                System.out.println("Client pushed the save button");
+                MessageDigest sha = MessageDigest.getInstance("SHA-256");
+                byte[] hashedName = sha.digest(this.name.getBytes());
+
+                byte[] salt = new byte[16];
+                for(int i=0; i<16; i++){
+                    salt[i] = hashedName[i+2];
+                }
+
+                SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+                KeySpec spec = new PBEKeySpec(name.toCharArray(), salt,65536, 256);
+                SecretKey tmp = factory.generateSecret(spec);
+                SecretKey fileKey = new SecretKeySpec(tmp.getEncoded(), "AES");
+
+                Cipher c = Cipher.getInstance("AES");
+                c.init(Cipher.ENCRYPT_MODE, fileKey);
 
                 JFileChooser fileChooser = new JFileChooser();
                 int retval = fileChooser.showSaveDialog(menuItemSave);
@@ -717,7 +724,19 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
                     }
                     try {
 
-                       chatClient.exportFile(file);
+                        chatClient.exportFile(file);
+
+                        FileInputStream inputStream = new FileInputStream(file);
+                        byte[] inputBytes = new byte[(int) file.length()];
+                        inputStream.read(inputBytes);
+
+                        byte[] outputBytes = c.doFinal(inputBytes);
+
+                        FileOutputStream outputStream = new FileOutputStream(file);
+                        outputStream.write(outputBytes);
+
+                        inputStream.close();
+                        outputStream.close();
 
                     } catch (Exception er) {
                         er.printStackTrace();
@@ -726,7 +745,21 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
             }
 
             if(e.getSource() == menuItemOpen) {
-                System.out.println("Client pushed the open button");
+                MessageDigest sha = MessageDigest.getInstance("SHA-256");
+                byte[] hashedName = sha.digest(this.name.getBytes());
+
+                byte[] salt = new byte[16];
+                for(int i=0; i<16; i++){
+                    salt[i] = hashedName[i+2];
+                }
+
+                SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+                KeySpec spec = new PBEKeySpec(name.toCharArray(), salt,65536, 256);
+                SecretKey tmp = factory.generateSecret(spec);
+                SecretKey fileKey = new SecretKeySpec(tmp.getEncoded(), "AES");
+
+                Cipher c = Cipher.getInstance("AES");
+                c.init(Cipher.DECRYPT_MODE, fileKey);
 
                 JFileChooser fc = new JFileChooser();
                 int returnVal = fc.showOpenDialog(menuItemOpen);
@@ -734,19 +767,26 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
                     File file = fc.getSelectedFile();
 
-                    FileInputStream fis = new FileInputStream(file);
-                    byte[] encodedFile = new byte[(int) file.length()];
-                    fis.read(encodedFile);
+                    FileInputStream inputStream = new FileInputStream(file);
+                    byte[] inputBytes = new byte[(int) file.length()];
+                    inputStream.read(inputBytes);
 
-                    System.out.println(new String(encodedFile));
+                    byte[] outputBytes = c.doFinal(inputBytes);
+
+                    FileOutputStream outputStream = new FileOutputStream(file);
+                    outputStream.write(outputBytes);
 
                     chatClient.importFile(file);
+
+                    inputStream.close();
+                    outputStream.close();
+                    Files.delete(file.toPath());
+
                 }
 
             }
 
             if(e.getSource() == menuItemSaveToServer){
-                //TODO
                 list.clearSelection();
                 textArea.setText("");
                 textArea.append("[System]: You are about to save all these chats (on a safe way) to the server. Please enter a safe password and press SEND.\n");
@@ -754,7 +794,6 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
             }
 
             if(e.getSource() == menuItemLoginFromServer){
-                //TODO
                 list.clearSelection();
                 textArea.setText("");
                 textArea.append("[System]: You are about to log into the server. Please enter your safe password and press SEND.\n");

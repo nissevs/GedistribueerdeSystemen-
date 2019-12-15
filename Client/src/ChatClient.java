@@ -627,7 +627,8 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
                             if(line.indexOf('%') == -1){
                                 this.storeAsSender.put(friend, new StoreAttribute(line));
                                 System.out.println("Store as sender - friend "+friend+":"+line);
-                                chatGUI.addUserToList(friend);
+                                String[] split = friend.split("_");
+                                if(split.length<1 || !this.isGroup(split[split.length-1])) chatGUI.addUserToList(friend);
                             }else{
                                 String[] split = line.split(" ");
                                 friend = split[1];
@@ -661,6 +662,7 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
                 }
 
                 if(i!=4){
+                    System.out.println(inputLine);
                     inputLine = line.split(" ");
                     attributen = inputLine[1];
                     if(sc.hasNextLine()) line = sc.nextLine();

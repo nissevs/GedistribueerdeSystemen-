@@ -21,7 +21,7 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
 
     public static void main(String[] args) {
         startServer();
-        String hostName = "192.168.1.45";
+        String hostName = "localhost";
         String serviceName = "groupChat";
 
         try {
