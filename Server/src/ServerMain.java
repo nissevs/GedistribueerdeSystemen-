@@ -57,7 +57,7 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
 
         System.out.println();
         System.out.println("Proberen om een bericht te krijgen uit boxnummer "+boxNr);
-        System.out.println("Tag: "+new String(tag));
+        System.out.println("Tag: "+new String(hashedTag));
         System.out.println();
 
         return message;
@@ -81,8 +81,6 @@ public class ServerMain extends UnicastRemoteObject implements ServerIF{
 
     @Override
     public void leaveChat(String username)throws RemoteException{
-
-        System.out.println(username+": FRIENDSHIP OVER!!");
-
+        System.out.println(username+" left the chat application...");
     }
 }

@@ -612,7 +612,6 @@ public class ClientRMIGUI extends JFrame implements ActionListener, Serializable
                     if(!chatClient.isGroup(listModel.getElementAt(index))){
                         sendMessage(listModel.getElementAt(index), message);
                     }else{
-                        System.out.println("Trying to send something into a group!");
                         List<String> users = chatClient.getUsersFromGroup(listModel.getElementAt(index));
                         sendMessageToGroup(listModel.getElementAt(index), users, message);
                     }

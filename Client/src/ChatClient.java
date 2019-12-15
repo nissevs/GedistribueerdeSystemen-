@@ -76,7 +76,6 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
             for(int i=0; i<groupMembers.size(); i++) {
 
                 if (!initializingUsers.get(receiver).containsKey(groupMembers.get(i)) && !groupMembers.get(i).equals(receiver)) {
-                    System.out.println("Receiver: "+receiver);
 
                     String appendedMessage1 = "";
                     String appendedMessage2 = "";
@@ -127,8 +126,6 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
                         StoreAttribute senderAttributes = new StoreAttribute(symmetricKey1, newBoxNr1, newTag1);
                         StoreAttribute receiverAttributes = new StoreAttribute(symmetricKey2, newBoxNr2, newTag2);
 
-                        System.out.println("Coordinator: add to list: "+groupMembers.get(i)+"_"+groupname);
-
                         System.out.println();
                         System.out.println("-----------------------------");
                         System.out.println("    User: "+receiver);
@@ -149,9 +146,6 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
 
                     initializingUsers.get(receiver).put(groupMembers.get(i),appendedMessage2);
                     initializingUsers.get(groupMembers.get(i)).put(receiver,appendedMessage1);
-
-                    System.out.println("Message from " + receiver + " to "+groupMembers.get(i)+": " + appendedMessage1);
-                    System.out.println("Message from " + groupMembers.get(i) + " to "+receiver+": " + appendedMessage2);
 
                 }
             }
@@ -234,6 +228,14 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
             byte[] thisMessage = serverIF.getMessageFromBoard(receiver.getBoxNummer(), receiver.getTag());
             while (thisMessage != null) {
                 if (thisMessage.length != 0) {
+
+                    System.out.println();
+                    System.out.println("Looking for messages from "+friendname);
+                    System.out.println("    KEY: "+Base64.getEncoder().encodeToString(receiver.getKey().getEncoded()));
+                    System.out.println("    TAG: "+new String(receiver.getTag()));
+                    System.out.println("    BOXNUMBER: "+receiver.getBoxNummer());
+                    System.out.println();
+
                     c.init(Cipher.DECRYPT_MODE, receiver.getKey());
                     byte[] messageArray = c.doFinal(thisMessage);
                     String newMessage = new String(messageArray);
@@ -311,6 +313,7 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
                             System.out.println("    ReceiverKey to this user: "+tagReceiverInString);
                             System.out.println("    Boxnumber used to send to this user: "+boxNrSender);
                             System.out.println("    Boxnumber user to receive from this user: "+boxNrReceiver);
+                            System.out.println();
 
                             users.add(userName);
 
@@ -326,7 +329,6 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
                             StoreAttribute senderAttributes = new StoreAttribute(keySender, boxNrSender, tagSender);
                             StoreAttribute receiverAttributes = new StoreAttribute(keyReceiver, boxNrReceiver, tagReceiver);
 
-                            System.out.println(userName+"_"+groupName);
                             this.storeAsSender.put(userName + "_" + groupName, senderAttributes);
                             this.storeAsReceiver.put(userName + "_" + groupName, receiverAttributes);
 
@@ -379,8 +381,11 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
         List<String> messages = new ArrayList<String>();
 
         if (!this.isGroup(friendname)) {
-            System.out.println("Trying to get data from "+friendname+"_"+groupname);
+            System.out.println("Looking for messages from "+friendname+"_"+groupname);
             StoreAttribute receiver = this.storeAsReceiver.get(friendname+"_"+groupname);
+            System.out.println("    KEY: "+Base64.getEncoder().encodeToString(receiver.getKey().getEncoded()));
+            System.out.println("    TAG: "+new String(receiver.getTag()));
+            System.out.println("    BOXNUMBER: "+receiver.getBoxNummer());
 
             byte[] thisMessage = serverIF.getMessageFromBoard(receiver.getBoxNummer(), receiver.getTag());
             while (thisMessage != null) {
@@ -603,19 +608,15 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
 
                 while(!stop && line.indexOf('#')==-1){
 
-                    System.out.println(line);
-
                     switch(attributen){
 
                         case("groups"):
                             this.groups.add(line);
-                            System.out.println("Added group: "+line);
                             chatGUI.addUserToList(line);
                             break;
                         case("group_members"):
                             if(line.indexOf('%') == -1){
                                 this.groupMembersList.get(groupname).add(line);
-                                System.out.println("Added member "+line+" to group "+groupname);
                             }else{
                                 String[] split = line.split(" ");
                                 List<String> members = new ArrayList<String>();
@@ -626,7 +627,6 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
                         case("storeAsSender"):
                             if(line.indexOf('%') == -1){
                                 this.storeAsSender.put(friend, new StoreAttribute(line));
-                                System.out.println("Store as sender - friend "+friend+":"+line);
                                 String[] split = friend.split("_");
                                 if(split.length<1 || !this.isGroup(split[split.length-1])) chatGUI.addUserToList(friend);
                             }else{
@@ -637,7 +637,6 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
                         case("storeAsReceiver"):
                             if(line.indexOf('%') == -1){
                                 this.storeAsReceiver.put(friend2, new StoreAttribute(line));
-                                System.out.println("Store as receiver - friend "+friend2+":"+line);
                             }else{
                                 String[] split = line.split(" ");
                                 friend2 = split[1];
@@ -646,13 +645,11 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
                         case("messageHistory"):
                             if(line.indexOf('%') == -1){
                                 this.messageHistory.get(friend3).add(line+"\n");
-                                System.out.println("Added message "+ line+" to history of friend "+friend3);
                             }else{
                                 String[] split = line.split(" ");
                                 List<String> messages = new ArrayList<String>();
                                 friend3 = split[1];
                                 this.messageHistory.put(friend3, messages);
-                                System.out.println("Added friend "+friend3+" to message history");
                             }
                             break;
                     }
@@ -662,7 +659,6 @@ public class ChatClient extends UnicastRemoteObject implements ClientIF {
                 }
 
                 if(i!=4){
-                    System.out.println(inputLine);
                     inputLine = line.split(" ");
                     attributen = inputLine[1];
                     if(sc.hasNextLine()) line = sc.nextLine();

@@ -16,7 +16,6 @@ public class StoreAttribute {
 
     public StoreAttribute(String storeAttributeString){
         String[] split = storeAttributeString.split("\\|");
-        System.out.println("KEY: "+split[0]);
         byte[] decodedKey = Base64.getDecoder().decode(split[0]);
 
         this.key = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");

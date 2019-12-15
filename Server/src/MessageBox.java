@@ -12,15 +12,17 @@ public class MessageBox {
 
     public byte[] getMessage(byte[] tag){
         byte[] message = this.messages.get(new String(tag));
-        if(this.messages.containsKey(tag)){
-            System.out.println("DELETED MESSAGE - "+new String(tag)+": "+new String(message));
+        if(this.messages.containsKey(new String(tag))){
+            System.out.println("DELETED MESSAGE - "+new String(message));
+            System.out.println("WITH TAG - "+new String(tag));
         }
         this.messages.remove(new String(tag));
         return message;
     }
 
     public void setTag(byte[] tag, byte[] message){
-        System.out.println("ADDED MESSAGE - "+new String(tag)+": "+new String(message));
+        System.out.println("ADDED MESSAGE - "+new String(message));
+        System.out.println("WITH TAG - "+new String(tag));
         this.messages.put(new String(tag), message);
     }
 
